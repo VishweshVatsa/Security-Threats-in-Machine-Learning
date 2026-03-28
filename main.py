@@ -89,6 +89,7 @@ plt.tight_layout()
 plt.show()
 
 # Step 11: Simulate stronger adversarial examples by adding larger scaled noise
+np.random.seed(42)  # Added to make the adversarial noise reproducible
 def add_stronger_adversarial_noise(X_scaled, epsilon=1.0):
     # sign of gaussian noise times epsilon (simple, but effective test)
     noise = epsilon * np.sign(np.random.randn(*X_scaled.shape))
