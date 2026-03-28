@@ -58,15 +58,67 @@ def preprocess_image(base64_img):
     
     # Convert to grayscale
     gray = background.convert('L')
+    img_array = np.array(gray)
     
-    # Resize to 28x28 using Lanczos
-    resized = gray.resize((28, 28), Image.Resampling.LANCZOS)
+    # Find bounding box of the non-black regions
+    non_empty_columns = np.where(img_array.max(axis=0) > 0)[0]
+    non_empty_rows = np.where(img_array.max(axis=1) > 0)[0]
     
-    # Convert to numpy array and normalize to [0, 1]
-    img_array = np.array(resized) / 255.0
+    # If the user drew nothing, return zeros
+    if len(non_empty_columns) == 0 or len(non_empty_rows) == 0:
+        return np.zeros((1, 784))
+        
+    min_x, max_x = non_empty_columns[0], non_empty_columns[-1]
+    min_y, max_y = non_empty_rows[0], non_empty_rows[-1]
+    
+    # Crop the image to exactly the drawn digit
+    cropped_array = img_array[min_y:max_y+1, min_x:max_x+1]
+    
+    # Resize the image so its max dimension is 20 pixels
+    cropped_img = Image.fromarray(cropped_array)
+    width, height = cropped_img.size
+    
+    if width > height:
+        new_width = 20
+        new_height = max(1, int(20 * (height / width)))
+    else:
+        new_height = 20
+        new_width = max(1, int(20 * (width / height)))
+        
+    resized_cropped = cropped_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    resized_array = np.array(resized_cropped)
+    
+    # Create the 28x28 padded result array
+    final_array = np.zeros((28, 28), dtype=np.uint8)
+    
+    # Calculate center of mass
+    y_coords, x_coords = np.indices(resized_array.shape)
+    total_mass = np.sum(resized_array)
+    
+    if total_mass > 0:
+        center_y = int(np.round(np.sum(y_coords * resized_array) / total_mass))
+        center_x = int(np.round(np.sum(x_coords * resized_array) / total_mass))
+    else:
+        center_y, center_x = new_height // 2, new_width // 2
+        
+    # We want the center of mass to map to (14, 14) in the final image
+    start_y = 14 - center_y
+    start_x = 14 - center_x
+    
+    # Constrain within boundaries so we don't slice out of bounds
+    start_y = max(0, min(start_y, 28 - new_height))
+    start_x = max(0, min(start_x, 28 - new_width))
+    
+    end_y = start_y + new_height
+    end_x = start_x + new_width
+    
+    final_array[start_y:end_y, start_x:end_x] = resized_array
+    
+    # Convert to float and normalize to [0, 1]
+    final_img_array = final_array / 255.0
     
     # Flatten array (1, 784)
-    flat_array = img_array.reshape(1, -1)
+    flat_array = final_img_array.reshape(1, -1)
     return flat_array
 
 @app.post("/predict")
