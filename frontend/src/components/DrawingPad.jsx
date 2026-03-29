@@ -7,16 +7,16 @@ const DrawingPad = ({ onPredict, onClear, disabled }) => {
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    
+
     // Fill background with black initially
     ctx.fillStyle = 'black';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // Setup drawing settings for drawing a digit like MNIST
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'white';
-    ctx.lineWidth = 18; // thick enough to look like a digits brush
+    ctx.lineWidth = 28; // thicker stroke (2.8px downscaled) to match MNIST properly
   }, []);
 
   const startDrawing = (e) => {

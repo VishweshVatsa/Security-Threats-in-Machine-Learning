@@ -10,7 +10,7 @@ import os
 
 def main():
     print("Downloading MNIST... (This may take a minute)")
-    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+    X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False, parser='liac-arff')
     X = X / 255.0  # Normalize pixels to [0,1]
     y = y.astype(int)
 
