@@ -10,6 +10,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score, ConfusionMatrixDisplay
+import joblib
+import os
 
 # Step 2: Load MNIST dataset
 print("Downloading MNIST...")
@@ -21,8 +23,14 @@ y = y.astype(int)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 # Step 4: Standardize the data (for models that benefit from it)
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
+if os.path.exists('models/scaler.pkl'):
+    print("Loading pre-trained Scaler...")
+    scaler = joblib.load('models/scaler.pkl')
+    X_train_scaled = scaler.transform(X_train)
+else:
+    print("Training Scaler...")
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled = scaler.transform(X_test)
 
 # Step 5: Visualize some sample images
@@ -40,22 +48,40 @@ print("Sample images from the dataset:")
 show_sample_images(X_train, y_train)
 
 # Step 6: KNN Classifier
-knn = KNeighborsClassifier(n_neighbors=3)
-knn.fit(X_train_scaled, y_train)
+if os.path.exists('models/knn.pkl'):
+    print("Loading pre-trained KNN...")
+    knn = joblib.load('models/knn.pkl')
+else:
+    print("Training KNN...")
+    knn = KNeighborsClassifier(n_neighbors=3)
+    knn.fit(X_train_scaled, y_train)
+
 knn_preds = knn.predict(X_test_scaled)
 knn_acc = accuracy_score(y_test, knn_preds)
 print("KNN Accuracy:", knn_acc)
 
 # Step 7: Logistic Regression Classifier
-log_reg = LogisticRegression(max_iter=1000)
-log_reg.fit(X_train_scaled, y_train)
+if os.path.exists('models/log_reg.pkl'):
+    print("Loading pre-trained Logistic Regression...")
+    log_reg = joblib.load('models/log_reg.pkl')
+else:
+    print("Training Logistic Regression...")
+    log_reg = LogisticRegression(max_iter=1000)
+    log_reg.fit(X_train_scaled, y_train)
+
 log_preds = log_reg.predict(X_test_scaled)
 log_acc = accuracy_score(y_test, log_preds)
 print("Logistic Regression Accuracy:", log_acc)
 
 # Step 8: SVM Classifier
-svm = SVC()
-svm.fit(X_train_scaled, y_train)
+if os.path.exists('models/svm.pkl'):
+    print("Loading pre-trained SVM...")
+    svm = joblib.load('models/svm.pkl')
+else:
+    print("Training SVM (this may take 5-10 minutes)...")
+    svm = SVC()
+    svm.fit(X_train_scaled, y_train)
+
 svm_preds = svm.predict(X_test_scaled)
 svm_acc = accuracy_score(y_test, svm_preds)
 print("SVM Accuracy:", svm_acc)
