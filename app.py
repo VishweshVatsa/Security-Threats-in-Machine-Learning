@@ -1,3 +1,4 @@
+# Server hot-reload triggered
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -60,9 +61,9 @@ def preprocess_image(base64_img):
     gray = background.convert('L')
     img_array = np.array(gray)
     
-    # Find bounding box of the non-black regions
-    non_empty_columns = np.where(img_array.max(axis=0) > 0)[0]
-    non_empty_rows = np.where(img_array.max(axis=1) > 0)[0]
+    # Find bounding box of the non-black regions (threshold > 15 avoids anti-aliasing dust)
+    non_empty_columns = np.where(img_array.max(axis=0) > 15)[0]
+    non_empty_rows = np.where(img_array.max(axis=1) > 15)[0]
     
     # If the user drew nothing, return zeros
     if len(non_empty_columns) == 0 or len(non_empty_rows) == 0:
@@ -85,19 +86,21 @@ def preprocess_image(base64_img):
         new_height = 20
         new_width = max(1, int(20 * (width / height)))
         
-    resized_cropped = cropped_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    # Using BICUBIC as LANCZOS can create negative clipping artifacts 
+    resized_cropped = cropped_img.resize((new_width, new_height), Image.Resampling.BICUBIC)
     resized_array = np.array(resized_cropped)
     
     # Create the 28x28 padded result array
     final_array = np.zeros((28, 28), dtype=np.uint8)
     
-    # Calculate center of mass
-    y_coords, x_coords = np.indices(resized_array.shape)
-    total_mass = np.sum(resized_array)
+    # Calculate center of mass (cast to float to explicitly avoid uint8 overflow precision loss)
+    mass_array = resized_array.astype(np.float32)
+    y_coords, x_coords = np.indices(mass_array.shape)
+    total_mass = np.sum(mass_array)
     
     if total_mass > 0:
-        center_y = int(np.round(np.sum(y_coords * resized_array) / total_mass))
-        center_x = int(np.round(np.sum(x_coords * resized_array) / total_mass))
+        center_y = int(np.round(np.sum(y_coords * mass_array) / total_mass))
+        center_x = int(np.round(np.sum(x_coords * mass_array) / total_mass))
     else:
         center_y, center_x = new_height // 2, new_width // 2
         

@@ -15,7 +15,7 @@ import os
 
 # Step 2: Load MNIST dataset
 print("Downloading MNIST...")
-X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False)
+X, y = fetch_openml('mnist_784', version=1, return_X_y=True, as_frame=False, parser='liac-arff')
 X = X / 255.0  # Normalize pixels to [0,1]
 y = y.astype(int)
 
