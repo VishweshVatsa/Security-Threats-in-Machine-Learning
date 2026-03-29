@@ -16,7 +16,7 @@ const DrawingPad = ({ onPredict, onClear, disabled }) => {
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = 'white';
-    ctx.lineWidth = 28; // thicker stroke (2.8px downscaled) to match MNIST properly
+    ctx.lineWidth = 15; // thicker stroke (2.8px downscaled) to match MNIST properly
   }, []);
 
   const startDrawing = (e) => {
